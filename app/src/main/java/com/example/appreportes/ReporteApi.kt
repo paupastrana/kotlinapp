@@ -8,6 +8,6 @@ interface ReporteApi {
     @POST("reportes") //endpoint para guardar
     suspend fun enviarReporte(@Body reporte: Reporte)
 
-    @GET("reportes") //endpoint para listar (Requisito 4)
+    @GET("reportes") //endpoint para lista
     suspend fun obtenerReportes(): List<Reporte>
 }

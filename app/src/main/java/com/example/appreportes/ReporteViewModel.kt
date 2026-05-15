@@ -10,7 +10,10 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.io.ByteArrayOutputStream
 
+
 class ReporteViewModel : ViewModel() {
+
+    // estados
     var titulo by mutableStateOf("")
     var descripcion by mutableStateOf("")
     var ubicacionText by mutableStateOf("Ubicación no obtenida")
@@ -18,21 +21,27 @@ class ReporteViewModel : ViewModel() {
     var longitud by mutableDoubleStateOf(0.0)
     var fotoBase64 by mutableStateOf("")
 
-    // Configuración de Retrofit (Requisito 5)
+    //lista teportes
+    var listaReportes = mutableStateListOf<Reporte>()
+
+    // regrofit
     private val retrofit = Retrofit.Builder()
-        .baseUrl("http://10.0.2.2:3000/") // IP para el emulador hacia tu PC local
+        .baseUrl("http://10.0.2.2:3000/") // IP para conectar el emulador con tu servidor local
         .addConverterFactory(GsonConverterFactory.create())
         .build()
 
     private val api = retrofit.create(ReporteApi::class.java)
 
+    //procesamiento de imagen
     fun convertirImagenABase64(bitmap: Bitmap) {
         val outputStream = ByteArrayOutputStream()
+        //comprimir imagen
         bitmap.compress(Bitmap.CompressFormat.JPEG, 70, outputStream)
-        val byteStep = outputStream.toByteArray()
-        fotoBase64 = Base64.encodeToString(byteStep, Base64.DEFAULT)
+        val bytes = outputStream.toByteArray()
+        fotoBase64 = Base64.encodeToString(bytes, Base64.DEFAULT)
     }
 
+    //enviar a back
     fun enviarReporte() {
         viewModelScope.launch {
             try {
@@ -44,10 +53,30 @@ class ReporteViewModel : ViewModel() {
                     imagenBase64 = fotoBase64
                 )
                 api.enviarReporte(nuevoReporte)
-                // Aquí podrías limpiar los campos tras enviar
+                limpiarFormulario()
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
+    }
+
+    // lista reportes
+    fun cargarReportes() {
+        viewModelScope.launch {
+            try {
+                val resultados = api.obtenerReportes()
+                listaReportes.clear()
+                listaReportes.addAll(resultados)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    private fun limpiarFormulario() {
+        titulo = ""
+        descripcion = ""
+        ubicacionText = "Ubicación no obtenida"
+        fotoBase64 = ""
     }
 }
